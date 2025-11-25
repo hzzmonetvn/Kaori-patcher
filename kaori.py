@@ -262,20 +262,18 @@ def modify_android_keystore_spi_kaori(file_path: Path) -> bool:
         return False
 
 def main():
-    # 1. Kiểm tra tùy chọn từ Workflow
+
     if os.getenv("ENABLE_MOD") == "false":
         log("SKIP: Kaori Features (User disabled)", "WARN")
         return
 
     log("Bắt đầu Kaori Mod...", "PROCESS")
     
-    # 2. Copy Kaorios Folder
+    
     if copy_kaorios_folder():
         log("Đã copy thư mục kaorios", "SUCCESS")
     
-    # 3. Định nghĩa các file mục tiêu
-    # Lưu ý: Class Path có thể thay đổi tùy Android Version (smali vs smali_classes2...)
-    # Ở đây giữ nguyên theo code mẫu, bạn có thể thêm logic loop check nếu cần.
+    
     
     fw_base = CURRENT_DIR / "framework_unpacked"
     
@@ -309,7 +307,7 @@ def main():
         else:
             log(f"Bỏ qua (Không tìm thấy): {file_path.name}", "WARN")
 
-    log(f"Hoàn tất Kaori Mod ({count} file đã sửa).", "SUCCESS")
+    log(f"Patch successfully ({count} file đã sửa).", "SUCCESS")
 
 if __name__ == "__main__":
     main()

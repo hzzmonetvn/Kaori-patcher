@@ -77,8 +77,8 @@ jobs:
       - name: Patch Python Script (Bypass inputs)
         # Bước này cực quan trọng: Xóa các lệnh dừng chờ input() trong code gốc để chạy tự động
         run: |
-          sed -i 's/input("Nhấn Enter để tiếp tục...")/pass/g' patcher.py
-          sed -i 's/input("Chọn chức năng (1-7): ")/"8"/g' patcher.py
+          sed -i 's/input("Nhấn Enter để tiếp tục...")/pass/g' usagi.py
+          sed -i 's/input("Chọn chức năng (1-7): ")/"8"/g' usagi.py
 
       - name: Run Kaori Patcher
         env:

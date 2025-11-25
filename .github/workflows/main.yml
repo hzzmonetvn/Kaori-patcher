@@ -103,4 +103,39 @@ jobs:
         with:
           name: Magisk-Module-Framework
           path: Module-framework-test.zip
+      - name: Send to Telegram
+        if: success()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          REPO_SLUG: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+
+
+          WORKFLOW_FILENAME="main.yml"
+          
+
+          ARTIFACT_NAME="Magisk-Module-Framework"
+          
+
+          NIGHTLY_URL="https://nightly.link/hzzmonetvn/Kaori-Patcher/workflows/$WORKFLOW_FILENAME/$BRANCH/$ARTIFACT_NAME.zip"
+          
+          echo "Generated Link: $NIGHTLY_URL"
+          
+ 
+          ZIP_FILE="Module-framework-test.zip"
+          
+          if [ -f "$ZIP_FILE" ]; then
+            echo "Sending to Telegram..."
+            
+
+            curl -v -F "chat_id=$CHAT_ID" \
+            -F document=@"$ZIP_FILE" \
+            -F parse_mode="HTML" \
+            -F caption="✨ <b>Kaori Patcher Result</b>%0A✅ Build Success!%0A%0A📂 <b>Input:</b> ${{ inputs.link_framework }}%0A⚡ <b>Nightly Link:</b> <a href='$NIGHTLY_URL'>Download Here</a>" \
+            https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument
+          else
+            echo "❌ Không tìm thấy file zip module!"
+          fi
           

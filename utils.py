@@ -6,7 +6,6 @@ import shutil
 import zipfile
 from pathlib import Path
 
-# --- Cấu hình đường dẫn ---
 CURRENT_DIR = Path.cwd()
 SMALI_JAR = CURRENT_DIR / "smali.jar"
 BAKSMALI_JAR = CURRENT_DIR / "baksmali.jar"
@@ -28,7 +27,6 @@ UNPACK_DIRS = {
 }
 
 def check_tools():
-    """Kiểm tra sự tồn tại của smali/baksmali"""
     if not SMALI_JAR.exists() or not BAKSMALI_JAR.exists():
         print("❌ Lỗi: Thiếu smali.jar hoặc baksmali.jar")
         return False

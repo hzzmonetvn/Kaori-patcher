@@ -3,7 +3,6 @@ name: Build Android Framework Mod
 on:
   workflow_dispatch:
     inputs:
-      # --- SECTION 1: LINKS ---
       link_framework:
         description: 'Link framework.jar (Bắt buộc)'
         required: true
@@ -20,8 +19,6 @@ on:
         description: 'Link miui-services.jar (Tùy chọn)'
         required: false
         type: string
-
-      # --- SECTION 2: OPTIONS ---
       opt_fix_bootloop:
         description: 'Fix Bootloop (A15)'
         required: true
@@ -43,7 +40,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Chuẩn bị môi trường
       - name: Checkout Code
         uses: actions/checkout@v3
 
@@ -58,9 +54,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-
-
-      # 3. Tải file Framework từ Link người dùng nhập
       - name: Download JAR Files
         run: |
           download_file() {
@@ -84,7 +77,6 @@ jobs:
             exit 1
           fi
 
-      # 4. Chạy quy trình Python (Split scripts)
       - name: 1. Unpack Jars
         run: python unpack.py
 
@@ -106,7 +98,6 @@ jobs:
       - name: 5. Repack and Create Module
         run: python repack.py
 
-      # 5. Lưu kết quả
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:

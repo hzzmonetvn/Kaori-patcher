@@ -49,9 +49,6 @@ def repack_jars():
         dir_path = CURRENT_DIR / directory
         if not dir_path.exists():
             continue
-        
-        # Dùng lệnh jar của Java hoặc zipfile python
-        # Code gốc dùng lệnh `jar`, ta dùng zipfile cho portable
         output_jar = CURRENT_DIR / jar_name
         with zipfile.ZipFile(output_jar, 'w', zipfile.ZIP_DEFLATED) as zf:
             for root, _, files in os.walk(dir_path):

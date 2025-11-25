@@ -1,4 +1,4 @@
-name: Build Android Framework Mod
+name: Patch Kaori Framework
 
 on:
   workflow_dispatch:
@@ -133,7 +133,7 @@ jobs:
             curl -v -F "chat_id=$CHAT_ID" \
             -F document=@"$ZIP_FILE" \
             -F parse_mode="HTML" \
-            -F caption="✨ <b>Kaori Patcher Result</b>%0A✅ Build Success!%0A%0A📂 <b>Input:</b> ${{ inputs.link_framework }}%0A⚡ <b>Nightly Link:</b> <a href='$NIGHTLY_URL'>Download Here</a>" \
+            -F caption="✨ <b>Kaori Patcher</b>%0A✅ Patch Success!⚡ <b>Nightly Link:</b> <a href='$NIGHTLY_URL'>Download Here</a>" \
             https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument
           else
             echo "❌ Không tìm thấy file zip module!"

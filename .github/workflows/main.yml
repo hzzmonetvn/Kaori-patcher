@@ -1,0 +1,158 @@
+name: Kaori Patcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      framework_url:
+        description: 'Link tải framework.jar (Bắt buộc)'
+        required: true
+      services_url:
+        description: 'Link tải services.jar (Tùy chọn)'
+        required: false
+      miui_framework_url:
+        description: 'Link tải miui-framework.jar (Tùy chọn)'
+        required: false
+      miui_services_url:
+        description: 'Link tải miui-services.jar (Tùy chọn)'
+        required: false
+      fix_bootloop:
+        description: 'Bật Fix Bootloop (A15)?'
+        type: boolean
+        default: true
+      apk_protection:
+        description: 'Bật Apk Protection?'
+        type: boolean
+        default: true
+      kaori_toolbox:
+        description: 'Bật Kaori Toolbox?'
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Set up Java (Required for smali)
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Download Smali/Baksmali (If not in repo)
+        run: |
+          if [ ! -f smali.jar ]; then
+            wget -O smali.jar https://bitbucket.org/JesusFreke/smali/downloads/smali-2.5.2.jar
+          fi
+          if [ ! -f baksmali.jar ]; then
+            wget -O baksmali.jar https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.5.2.jar
+          fi
+
+      - name: Download Target JARs
+        run: |
+          wget -O framework.jar "${{ inputs.framework_url }}"
+          
+          if [ -n "${{ inputs.services_url }}" ]; then
+            wget -O services.jar "${{ inputs.services_url }}"
+          fi
+          
+          if [ -n "${{ inputs.miui_framework_url }}" ]; then
+            wget -O miui-framework.jar "${{ inputs.miui_framework_url }}"
+          fi
+          
+          if [ -n "${{ inputs.miui_services_url }}" ]; then
+            wget -O miui-services.jar "${{ inputs.miui_services_url }}"
+          fi
+          
+          ls -lh *.jar
+
+      - name: Patch Python Script (Bypass inputs)
+        # Bước này cực quan trọng: Xóa các lệnh dừng chờ input() trong code gốc để chạy tự động
+        run: |
+          sed -i 's/input("Nhấn Enter để tiếp tục...")/pass/g' patcher.py
+          sed -i 's/input("Chọn chức năng (1-7): ")/"8"/g' patcher.py
+
+      - name: Run Kaori Patcher
+        env:
+          DO_FIX_BOOTLOOP: ${{ inputs.fix_bootloop }}
+          DO_APK_PROTECTION: ${{ inputs.apk_protection }}
+          DO_KAORI_TOOLBOX: ${{ inputs.kaori_toolbox }}
+        run: |
+          # Tạo một script chạy tự động gọi các hàm từ class gốc
+          cat <<EOF > runner.py
+          import os
+          from patcher import KaoriosToolkit
+
+          def main():
+              print(">>> STARTING AUTOMATED RUNNER <<<")
+              toolkit = KaoriosToolkit()
+              
+              # 1. Kiểm tra và giải nén
+              files = toolkit.check_target_files()
+              toolkit.unpack_all(files)
+              
+              # 2. Fix Bootloop
+              if os.environ.get('DO_FIX_BOOTLOOP') == 'true':
+                  toolkit.fix_bootloop_a15()
+              
+              # 3. Apk Protection
+              if os.environ.get('DO_APK_PROTECTION') == 'true':
+                  toolkit.apk_protection()
+              
+              # 4. Kaori Toolbox
+              if os.environ.get('DO_KAORI_TOOLBOX') == 'true':
+                  toolkit.kaori_toolbox()
+              
+              # 5. Repack Classes
+              toolkit.repack_all_classes()
+              
+              # 6. Repack JAR
+              toolkit.repack_all_jar_files()
+              
+              # 7. Create Module
+              # Đảm bảo thư mục module tồn tại để tránh lỗi
+              if not os.path.exists("module/system/framework"):
+                  os.makedirs("module/system/framework", exist_ok=True)
+              if not os.path.exists("module/system/system_ext/framework"):
+                  os.makedirs("module/system/system_ext/framework", exist_ok=True)
+                  
+              toolkit.create_test_module()
+              print(">>> FINISHED <<<")
+
+          if __name__ == "__main__":
+              main()
+          EOF
+          
+          python3 runner.py
+
+      - name: Upload Artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: Patched-Module
+          path: Module-framework-test.zip
+
+      - name: Send to Telegram
+        if: success()
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          if [ -f "Module-framework-test.zip" ]; then
+            curl -v -F "chat_id=$CHAT_ID" \
+            -F document=@Module-framework-test.zip \
+            -F caption="✅ Build Success! Here is your patched module." \
+            https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument
+          else
+            curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
+            -d chat_id=$CHAT_ID \
+            -d text="❌ Build finished but ZIP file not found."
+          fi
+          

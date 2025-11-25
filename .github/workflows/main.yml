@@ -1,39 +1,115 @@
-name: kaorios toolbox patcher
+name: Build Android Framework Mod
 
 on:
   workflow_dispatch:
     inputs:
-      framework_url:
-        description: 'Link framework.jar (Bắt buộc *)'
+      # --- SECTION 1: LINKS ---
+      link_framework:
+        description: 'Link framework.jar (Bắt buộc)'
         required: true
-      services_url:
-        description: 'Link services.jar (Tùy chọn **)'
+        type: string
+      link_services:
+        description: 'Link services.jar (Tùy chọn)'
         required: false
-      miui_framework_url:
-        description: 'Link miui-framework.jar (Tùy chọn **)'
+        type: string
+      link_miui_framework:
+        description: 'Link miui-framework.jar (Tùy chọn)'
         required: false
-      miui_services_url:
-        description: 'Link miui-services.jar (Tùy chọn **)'
+        type: string
+      link_miui_services:
+        description: 'Link miui-services.jar (Tùy chọn)'
         required: false
-      fix_bootloop:
-        description: 'Fix Bootloop (A15)?'
-        type: boolean
+        type: string
+
+      # --- SECTION 2: OPTIONS ---
+      opt_fix_bootloop:
+        description: 'Fix Bootloop (A15)'
+        required: true
         default: true
-      apk_protection:
-        description: 'Apk Protection?'
         type: boolean
+      opt_patch_apk:
+        description: 'Patch APK Protection'
+        required: true
         default: true
-      kaori_toolbox:
-        description: 'Kaori Toolbox?'
         type: boolean
+      opt_patch_kaori:
+        description: 'Patch Kaori Features'
+        required: true
         default: true
+        type: boolean
 
 jobs:
-  build_and_patch:
+  build:
     runs-on: ubuntu-latest
-    
+
     steps:
-      # 1. Lấy code về
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # --- BƯỚC TẢI FILE ---
+      - name: Download JAR Files
+        run: |
+          # Hàm tải file an toàn
+          download_file() {
+            url="$1"
+            name="$2"
+            if [ -n "$url" ]; then
+              echo "⬇️ Đang tải $name..."
+              wget -O "$name" "$url"
+            else
+              echo "ℹ️ Bỏ qua $name (Không có link)"
+            fi
+          }
+
+          download_file "${{ inputs.link_framework }}" "framework.jar"
+          download_file "${{ inputs.link_services }}" "services.jar"
+          download_file "${{ inputs.link_miui_framework }}" "miui-framework.jar"
+          download_file "${{ inputs.link_miui_services }}" "miui-services.jar"
+
+          # Kiểm tra file bắt buộc
+          if [ ! -f "framework.jar" ]; then
+            echo "❌ Lỗi: Thiếu framework.jar!"
+            exit 1
+          fi
+
+      # --- BƯỚC CHẠY PYTHON ---
+      - name: 1. Unpack Jars
+        run: python 1_unpack.py
+
+      - name: 2. Fix Bootloop
+        env:
+          ENABLE_MOD: ${{ inputs.opt_fix_bootloop }}
+        run: python 2_fix_bootloop.py
+
+      - name: 3. Apk Protection
+        env:
+          ENABLE_MOD: ${{ inputs.opt_patch_apk }}
+        run: python 3_apk_protection.py
+
+      - name: 4. Kaori Features
+        env:
+          ENABLE_MOD: ${{ inputs.opt_patch_kaori }}
+        run: python 4_kaori.py
+
+      - name: 5. Repack and Create Module
+        run: python 5_repack.py
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Magisk-Module-Framework
+          path: Module-framework-test.zip
       - name: Checkout Repository
         uses: actions/checkout@v3
 

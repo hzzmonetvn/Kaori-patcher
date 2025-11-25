@@ -85,25 +85,25 @@ jobs:
 
       # --- BƯỚC CHẠY PYTHON ---
       - name: 1. Unpack Jars
-        run: python 1_unpack.py
+        run: python unpack.py
 
       - name: 2. Fix Bootloop
         env:
           ENABLE_MOD: ${{ inputs.opt_fix_bootloop }}
-        run: python 2_fix_bootloop.py
+        run: python bootloop.py
 
       - name: 3. Apk Protection
         env:
           ENABLE_MOD: ${{ inputs.opt_patch_apk }}
-        run: python 3_apk_protection.py
+        run: python apk.py
 
       - name: 4. Kaori Features
         env:
           ENABLE_MOD: ${{ inputs.opt_patch_kaori }}
-        run: python 4_kaori.py
+        run: python kaori.py
 
       - name: 5. Repack and Create Module
-        run: python 5_repack.py
+        run: python repack.py
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4

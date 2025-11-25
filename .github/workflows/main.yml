@@ -43,6 +43,89 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. Chuẩn bị môi trường
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 2. Tải Tools (Smali/Baksmali) - QUAN TRỌNG: Cần có để chạy unpack/repack
+      - name: Download Smali Tools
+        run: |
+          echo "⬇️ Downloading Smali & Baksmali..."
+          wget -O smali.jar https://bitbucket.org/JesusFreke/smali/downloads/smali-2.5.2.jar
+          wget -O baksmali.jar https://bitbucket.org/JesusFreke/smali/downloads/baksmali-2.5.2.jar
+
+      # 3. Tải file Framework từ Link người dùng nhập
+      - name: Download JAR Files
+        run: |
+          download_file() {
+            url="$1"
+            name="$2"
+            if [ -n "$url" ]; then
+              echo "⬇️ Đang tải $name..."
+              wget -O "$name" "$url"
+            else
+              echo "ℹ️ Bỏ qua $name (Không có link)"
+            fi
+          }
+
+          download_file "${{ inputs.link_framework }}" "framework.jar"
+          download_file "${{ inputs.link_services }}" "services.jar"
+          download_file "${{ inputs.link_miui_framework }}" "miui-framework.jar"
+          download_file "${{ inputs.link_miui_services }}" "miui-services.jar"
+
+          if [ ! -f "framework.jar" ]; then
+            echo "❌ Lỗi: Thiếu framework.jar!"
+            exit 1
+          fi
+
+      # 4. Chạy quy trình Python (Split scripts)
+      - name: 1. Unpack Jars
+        run: python unpack.py
+
+      - name: 2. Fix Bootloop
+        env:
+          ENABLE_MOD: ${{ inputs.opt_fix_bootloop }}
+        run: python bootloop.py
+
+      - name: 3. Apk Protection
+        env:
+          ENABLE_MOD: ${{ inputs.opt_patch_apk }}
+        run: python apk.py
+
+      - name: 4. Kaori Features
+        env:
+          ENABLE_MOD: ${{ inputs.opt_patch_kaori }}
+        run: python kaori.py
+
+      - name: 5. Repack and Create Module
+        run: python repack.py
+
+      # 5. Lưu kết quả
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Magisk-Module-Framework
+          path: Module-framework-test.zip
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 

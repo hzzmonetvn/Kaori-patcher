@@ -133,7 +133,7 @@ jobs:
             curl -v -F "chat_id=$CHAT_ID" \
             -F document=@"$ZIP_FILE" \
             -F parse_mode="HTML" \
-            -F caption="✨ <b>Kaori</b>" \
+            -F caption="✨ <b>Bootloop? Blame @Usagi79</b>" \
             https://api.telegram.org/bot$TELEGRAM_TOKEN/sendDocument
           else
             echo "❌ Không tìm thấy file zip module!"
